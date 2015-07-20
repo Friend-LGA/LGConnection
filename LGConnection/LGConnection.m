@@ -41,7 +41,7 @@ static NSInteger const kErrorCodeNotModified = -1011;
 
 typedef enum
 {
-    RequestTypeStandart,
+    RequestTypeStandard,
     RequestTypeMultipartData,
     RequestTypeMultipartDataArray,
     RequestTypeMultipartPathsArray,
@@ -150,7 +150,7 @@ RequestType;
                 {
                     NSDictionary *savedRequest = _savedRequestsArray.firstObject;
                     
-                    if ([savedRequest[@"type"] intValue] == RequestTypeStandart)
+                    if ([savedRequest[@"type"] intValue] == RequestTypeStandard)
                     {
                         [self sendRequestToUrl:savedRequest[@"urlString"]
                                         method:[savedRequest[@"method"] intValue]
@@ -276,7 +276,7 @@ RequestType;
                              if (_savedRequestsArray)
                              {
                                  NSMutableDictionary *savedRequest = [NSMutableDictionary new];
-                                 [savedRequest setObject:[NSNumber numberWithInt:RequestTypeStandart] forKey:@"type"];
+                                 [savedRequest setObject:[NSNumber numberWithInt:RequestTypeStandard] forKey:@"type"];
                                  [savedRequest setObject:urlString forKey:@"urlString"];
                                  [savedRequest setObject:[NSNumber numberWithInt:method] forKey:@"method"];
                                  if (parameters) [savedRequest setObject:parameters forKey:@"parameters"];
@@ -323,7 +323,7 @@ RequestType;
                              if (_savedRequestsArray)
                              {
                                  NSMutableDictionary *savedRequest = [NSMutableDictionary new];
-                                 [savedRequest setObject:[NSNumber numberWithInt:RequestTypeStandart] forKey:@"type"];
+                                 [savedRequest setObject:[NSNumber numberWithInt:RequestTypeStandard] forKey:@"type"];
                                  [savedRequest setObject:urlString forKey:@"urlString"];
                                  [savedRequest setObject:[NSNumber numberWithInt:method] forKey:@"method"];
                                  if (parameters) [savedRequest setObject:parameters forKey:@"parameters"];
