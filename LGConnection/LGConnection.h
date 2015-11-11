@@ -32,22 +32,20 @@
 
 @interface LGConnection : NSObject
 
-typedef enum
+typedef NS_ENUM(NSUInteger, LGConnectionResponseType)
 {
-    LGConnectionResponseTypeDATA,
-    LGConnectionResponseTypeJSON,
-    LGConnectionResponseTypeXML,
-    LGConnectionResponseTypePLIST
-}
-LGConnectionResponseType;
+    LGConnectionResponseTypeDATA  = 0,
+    LGConnectionResponseTypeJSON  = 1,
+    LGConnectionResponseTypeXML   = 2,
+    LGConnectionResponseTypePLIST = 3
+};
 
-typedef enum
+typedef NS_ENUM(NSUInteger, LGConnectionMethod)
 {
-    LGConnectionMethodPOST,
-    LGConnectionMethodGET,
-    LGConnectionMethodJSON
-}
-LGConnectionMethod;
+    LGConnectionMethodPOST = 0,
+    LGConnectionMethodGET  = 1,
+    LGConnectionMethodJSON = 2
+};
 
 @property (assign, nonatomic) BOOL cookiesShouldHandle;
 @property (assign, nonatomic) NSTimeInterval timeoutInterval;
