@@ -62,30 +62,30 @@ RequestType;
 @implementation LGConnection
 
 - (instancetype)initWithRepeatAfterConnectionLost:(BOOL)repeat
-                  connectionLostHandler:(void(^)())connectionLostHandler
-               connectionRestoreHandler:(void(^)())connectionRestoreHandler
+                            connectionLostHandler:(void(^)())connectionLostHandler
+                         connectionRestoreHandler:(void(^)())connectionRestoreHandler
 {
     self = [super init];
     if (self)
     {
         _managersArray = [NSMutableArray new];
-        
+
         // -----
-        
+
         _reachability = [Reachability reachabilityForInternetConnection];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(reachabilityChanged:) name:kReachabilityChangedNotification object:_reachability];
         [_reachability startNotifier];
-        
+
         // -----
-        
+
         if (repeat)
             _savedRequestsArray = [NSMutableArray new];
-        
+
         _connectionLostHandler = connectionLostHandler;
         _connectionRestoreHandler = connectionRestoreHandler;
-        
+
         _cookiesShouldHandle = NO;
-        
+
         _timeoutInterval = 60.0;
     }
     return self;
@@ -109,8 +109,8 @@ RequestType;
 }
 
 + (instancetype)connectionWithRepeatAfterConnectionLost:(BOOL)repeat
-                        connectionLostHandler:(void(^)())connectionLostHandler
-                     connectionRestoreHandler:(void(^)())connectionRestoreHandler
+                                  connectionLostHandler:(void(^)())connectionLostHandler
+                               connectionRestoreHandler:(void(^)())connectionRestoreHandler
 {
     return [[self alloc] initWithRepeatAfterConnectionLost:repeat
                                      connectionLostHandler:connectionLostHandler
@@ -122,7 +122,7 @@ RequestType;
 - (void)dealloc
 {
     NSLog(@"%s", __PRETTY_FUNCTION__);
-    
+
     [[NSNotificationCenter defaultCenter] removeObserver:self name:kReachabilityChangedNotification object:nil];
     [_reachability stopNotifier];
 }
@@ -139,17 +139,17 @@ RequestType;
     if (_savedRequestsArray)
     {
         Reachability *reachability = notification.object;
-        
+
         if ([reachability isEqual:_reachability] && reachability.currentReachabilityStatus != NotReachable)
         {
             if (_connectionRestoreHandler) _connectionRestoreHandler();
-            
+
             if (_savedRequestsArray.count)
             {
                 for ( ; ; )
                 {
                     NSDictionary *savedRequest = _savedRequestsArray.firstObject;
-                    
+
                     if ([savedRequest[@"type"] intValue] == RequestTypeStandard)
                     {
                         [self sendRequestToUrl:savedRequest[@"urlString"]
@@ -208,9 +208,9 @@ RequestType;
                                   progressHandler:savedRequest[@"progressHandler"]
                                 completionHandler:savedRequest[@"completionHandler"]];
                     }
-                    
+
                     [_savedRequestsArray removeObjectAtIndex:0];
-                    
+
                     if (!_savedRequestsArray.count) break;
                 }
             }
@@ -229,9 +229,9 @@ RequestType;
        completionHandler:(void(^)(NSError *error, id responseObject))completionHandler
 {
     NSString *urlString = ([url isKindOfClass:[NSString class]] ? (NSString *)url : [NSString stringWithFormat:@"%@", url]);
-    
+
     AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
-    
+
     if (responseType == LGConnectionResponseTypeJSON)
     {
         AFJSONRequestSerializer *requestSerializer = [AFJSONRequestSerializer serializer];
@@ -246,15 +246,15 @@ RequestType;
         requestSerializer.timeoutInterval = _timeoutInterval;
         manager.requestSerializer = requestSerializer;
     }
-    
+
     if (setupHandler) setupHandler(manager);
-    
+
     [_managersArray addObject:manager];
-    
+
     // -----
-    
+
     AFHTTPRequestOperation *operation;
-    
+
     if (method == LGConnectionMethodPOST || method == LGConnectionMethodJSON)
     {
         operation = [manager POST:urlString
@@ -263,9 +263,9 @@ RequestType;
                      {
                          //NSLog(@"statusCode: %i", (int)[operation.response statusCode]);
                          //NSLog(@"allHeaderFields: %@", [operation.response allHeaderFields]);
-                         
+
                          [self parseResponseData:responseData responseType:responseType operation:operation completionHandler:completionHandler];
-                         
+
                          [manager.operationQueue cancelAllOperations];
                          [_managersArray removeObject:manager];
                      }
@@ -283,23 +283,23 @@ RequestType;
                                  [savedRequest setObject:[NSNumber numberWithInt:responseType] forKey:@"responseType"];
                                  if (setupHandler) [savedRequest setObject:setupHandler forKey:@"setupHandler"];
                                  if (completionHandler) [savedRequest setObject:completionHandler forKey:@"completionHandler"];
-                                 
+
                                  BOOL isExist = NO;
-                                 
+
                                  for (NSDictionary *dictionary in _savedRequestsArray)
                                      if ([dictionary isEqualToDictionary:savedRequest])
                                          isExist = YES;
-                                 
+
                                  if (!isExist) [_savedRequestsArray addObject:savedRequest];
                              }
                              else if (completionHandler) completionHandler(error, nil);
-                             
+
                              if (_connectionLostHandler) _connectionLostHandler();
                          }
                          else
                          {
                              if (completionHandler) completionHandler(error, nil);
-                             
+
                              [manager.operationQueue cancelAllOperations];
                              [_managersArray removeObject:manager];
                          }
@@ -312,7 +312,7 @@ RequestType;
                          success:^(AFHTTPRequestOperation *operation, NSData *responseData)
                      {
                          [self parseResponseData:responseData responseType:responseType operation:operation completionHandler:completionHandler];
-                         
+
                          [manager.operationQueue cancelAllOperations];
                          [_managersArray removeObject:manager];
                      }
@@ -329,29 +329,29 @@ RequestType;
                                  if (parameters) [savedRequest setObject:parameters forKey:@"parameters"];
                                  [savedRequest setObject:[NSNumber numberWithInt:responseType] forKey:@"responseType"];
                                  if (completionHandler) [savedRequest setObject:completionHandler forKey:@"completionHandler"];
-                                 
+
                                  BOOL isExist = NO;
-                                 
+
                                  for (NSDictionary *dictionary in _savedRequestsArray)
                                      if ([dictionary isEqualToDictionary:savedRequest])
                                          isExist = YES;
-                                 
+
                                  if (!isExist) [_savedRequestsArray addObject:savedRequest];
                              }
                              else if (completionHandler) completionHandler(error, nil);
-                             
+
                              if (_connectionLostHandler) _connectionLostHandler();
                          }
                          else
                          {
                              if (completionHandler) completionHandler(error, nil);
-                             
+
                              [manager.operationQueue cancelAllOperations];
                              [_managersArray removeObject:manager];
                          }
                      }];
     }
-    
+
     [operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^(void)
      {
          /*
@@ -376,20 +376,20 @@ RequestType;
                 completionHandler:(void(^)(NSError *error, id responseObject))completionHandler
 {
     NSString *urlString = ([url isKindOfClass:[NSString class]] ? (NSString *)url : [NSString stringWithFormat:@"%@", url]);
-    
+
     AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
     manager.responseSerializer = [AFHTTPResponseSerializer serializer];
     manager.requestSerializer.HTTPShouldHandleCookies = _cookiesShouldHandle;
     manager.requestSerializer.timeoutInterval = _timeoutInterval;
-    
+
     [_managersArray addObject:manager];
-    
+
     AFHTTPRequestOperation *operation = [manager POST:urlString
                                            parameters:parameters
                             constructingBodyWithBlock:^(id<AFMultipartFormData> formData)
                                          {
                                              NSString *mimeType = [LGHelper mimeTypeForExtension:fileExtension];
-                                             
+
                                              if (mimeType.length)
                                                  [formData appendPartWithFileData:data
                                                                              name:name
@@ -402,7 +402,7 @@ RequestType;
                                               success:^(AFHTTPRequestOperation *operation, NSData *responseData)
                                          {
                                              [self parseResponseData:responseData responseType:responseType operation:operation completionHandler:completionHandler];
-                                             
+
                                              [manager.operationQueue cancelAllOperations];
                                              [_managersArray removeObject:manager];
                                          }
@@ -422,28 +422,28 @@ RequestType;
                                                      [savedRequest setObject:[NSNumber numberWithInt:responseType] forKey:@"responseType"];
                                                      if (progressHandler) [savedRequest setObject:progressHandler forKey:@"progressHandler"];
                                                      if (completionHandler) [savedRequest setObject:completionHandler forKey:@"completionHandler"];
-                                                     
+
                                                      BOOL isExist = NO;
-                                                     
+
                                                      for (NSDictionary *dictionary in _savedRequestsArray)
                                                          if ([dictionary isEqualToDictionary:savedRequest])
                                                              isExist = YES;
-                                                     
+
                                                      if (!isExist) [_savedRequestsArray addObject:savedRequest];
                                                  }
                                                  else if (completionHandler) completionHandler(error, nil);
-                                                 
+
                                                  if (_connectionLostHandler) _connectionLostHandler();
                                              }
                                              else
                                              {
                                                  if (completionHandler) completionHandler(error, nil);
-                                                 
+
                                                  [manager.operationQueue cancelAllOperations];
                                                  [_managersArray removeObject:manager];
                                              }
                                          }];
-    
+
     [operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^(void)
      {
          /*
@@ -454,18 +454,18 @@ RequestType;
           otherButtonTitles:nil] show];
           */
      }];
-    
+
     if (progressHandler)
     {
         [operation setUploadProgressBlock:^(NSUInteger bytesRead, long long totalBytesRead, long long totalBytesExpectedToRead)
          {
              float progress = (float)totalBytesRead/(float)totalBytesExpectedToRead;
-             
+
              NSUInteger downloadPercentage = (float)progress * (float)100;
              if (downloadPercentage > 100) downloadPercentage = 100;
-             
+
              progressHandler(totalBytesExpectedToRead, totalBytesRead, progress, downloadPercentage);
-             
+
              //NSLog(@"%lld | %lld | %lld", totalBytesExpectedToRead, totalBytesRead, (long long)bytesRead);
              //NSLog(@"progress: %.2f %%", downloadPercentage*100);
          }];
@@ -482,16 +482,16 @@ RequestType;
                 completionHandler:(void(^)(NSError *error, id responseObject))completionHandler
 {
     NSString *urlString = ([url isKindOfClass:[NSString class]] ? (NSString *)url : [NSString stringWithFormat:@"%@", url]);
-    
+
     AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
     manager.responseSerializer = [AFHTTPResponseSerializer serializer];
     manager.requestSerializer.HTTPShouldHandleCookies = _cookiesShouldHandle;
     manager.requestSerializer.timeoutInterval = _timeoutInterval;
-    
+
     [_managersArray addObject:manager];
-    
+
     NSString *mimeType = [LGHelper mimeTypeForExtension:fileExtension];
-    
+
     AFHTTPRequestOperation *operation = [manager POST:urlString
                                            parameters:parameters
                             constructingBodyWithBlock:^(id<AFMultipartFormData> formData)
@@ -499,7 +499,7 @@ RequestType;
                                              for (NSUInteger i=0; i<dataArray.count; i++)
                                              {
                                                  NSString *nameString = [NSString stringWithFormat:@"%@[%i]", name, (int)i];
-                                                 
+
                                                  if (mimeType.length)
                                                      [formData appendPartWithFileData:dataArray[i]
                                                                                  name:nameString
@@ -513,7 +513,7 @@ RequestType;
                                               success:^(AFHTTPRequestOperation *operation, NSData *responseData)
                                          {
                                              [self parseResponseData:responseData responseType:responseType operation:operation completionHandler:completionHandler];
-                                             
+
                                              [manager.operationQueue cancelAllOperations];
                                              [_managersArray removeObject:manager];
                                          }
@@ -533,28 +533,28 @@ RequestType;
                                                      [savedRequest setObject:[NSNumber numberWithInt:responseType] forKey:@"responseType"];
                                                      if (progressHandler) [savedRequest setObject:progressHandler forKey:@"progressHandler"];
                                                      if (completionHandler) [savedRequest setObject:completionHandler forKey:@"completionHandler"];
-                                                     
+
                                                      BOOL isExist = NO;
-                                                     
+
                                                      for (NSDictionary *dictionary in _savedRequestsArray)
                                                          if ([dictionary isEqualToDictionary:savedRequest])
                                                              isExist = YES;
-                                                     
+
                                                      if (!isExist) [_savedRequestsArray addObject:savedRequest];
                                                  }
                                                  else if (completionHandler) completionHandler(error, nil);
-                                                 
+
                                                  if (_connectionLostHandler) _connectionLostHandler();
                                              }
                                              else
                                              {
                                                  if (completionHandler) completionHandler(error, nil);
-                                                 
+
                                                  [manager.operationQueue cancelAllOperations];
                                                  [_managersArray removeObject:manager];
                                              }
                                          }];
-    
+
     [operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^(void)
      {
          /*
@@ -565,18 +565,18 @@ RequestType;
           otherButtonTitles:nil] show];
           */
      }];
-    
+
     if (progressHandler)
     {
         [operation setUploadProgressBlock:^(NSUInteger bytesRead, long long totalBytesRead, long long totalBytesExpectedToRead)
          {
              float progress = (float)totalBytesRead/(float)totalBytesExpectedToRead;
-             
+
              NSUInteger downloadPercentage = (float)progress * (float)100;
              if (downloadPercentage > 100) downloadPercentage = 100;
-             
+
              progressHandler(totalBytesExpectedToRead, totalBytesRead, progress, downloadPercentage);
-             
+
              //NSLog(@"%lld | %lld | %lld", totalBytesExpectedToRead, totalBytesRead, (long long)bytesRead);
              //NSLog(@"progress: %.2f %%", downloadPercentage*100);
          }];
@@ -592,10 +592,10 @@ RequestType;
                 completionHandler:(void(^)(NSError *error, id responseObject))completionHandler
 {
     NSMutableArray *filePathsArray = [NSMutableArray new];
-    
+
     for (NSURL *fileUrl in fileUrlsArray)
         [filePathsArray addObject:fileUrl.path];
-    
+
     [self sendMultipartRequestToUrl:url
                          parameters:parameters
                                name:name
@@ -614,14 +614,14 @@ RequestType;
                 completionHandler:(void(^)(NSError *error, id responseObject))completionHandler
 {
     NSString *urlString = ([url isKindOfClass:[NSString class]] ? (NSString *)url : [NSString stringWithFormat:@"%@", url]);
-    
+
     AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
     manager.responseSerializer = [AFHTTPResponseSerializer serializer];
     manager.requestSerializer.HTTPShouldHandleCookies = _cookiesShouldHandle;
     manager.requestSerializer.timeoutInterval = _timeoutInterval;
-    
+
     [_managersArray addObject:manager];
-    
+
     AFHTTPRequestOperation *operation = [manager POST:urlString
                                            parameters:parameters
                             constructingBodyWithBlock:^(id<AFMultipartFormData> formData)
@@ -631,9 +631,9 @@ RequestType;
                                                  NSString *filePath = filePathsArray[i];
                                                  NSData *fileData = [NSData dataWithContentsOfFile:filePath];
                                                  NSString *nameString = [NSString stringWithFormat:@"%@[%i]", name, (int)i];
-                                                 
+
                                                  NSString *mimeType = [LGHelper mimeTypeForPath:filePath];
-                                                 
+
                                                  if (mimeType.length)
                                                      [formData appendPartWithFileData:fileData
                                                                                  name:nameString
@@ -647,7 +647,7 @@ RequestType;
                                               success:^(AFHTTPRequestOperation *operation, NSData *responseData)
                                          {
                                              [self parseResponseData:responseData responseType:responseType operation:operation completionHandler:completionHandler];
-                                             
+
                                              [manager.operationQueue cancelAllOperations];
                                              [_managersArray removeObject:manager];
                                          }
@@ -666,28 +666,28 @@ RequestType;
                                                      [savedRequest setObject:[NSNumber numberWithInt:responseType] forKey:@"responseType"];
                                                      if (progressHandler) [savedRequest setObject:progressHandler forKey:@"progressHandler"];
                                                      if (completionHandler) [savedRequest setObject:completionHandler forKey:@"completionHandler"];
-                                                     
+
                                                      BOOL isExist = NO;
-                                                     
+
                                                      for (NSDictionary *dictionary in _savedRequestsArray)
                                                          if ([dictionary isEqualToDictionary:savedRequest])
                                                              isExist = YES;
-                                                     
+
                                                      if (!isExist) [_savedRequestsArray addObject:savedRequest];
                                                  }
                                                  else if (completionHandler) completionHandler(error, nil);
-                                                 
+
                                                  if (_connectionLostHandler) _connectionLostHandler();
                                              }
                                              else
                                              {
                                                  if (completionHandler) completionHandler(error, nil);
-                                                 
+
                                                  [manager.operationQueue cancelAllOperations];
                                                  [_managersArray removeObject:manager];
                                              }
                                          }];
-    
+
     [operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^(void)
      {
          /*
@@ -698,18 +698,18 @@ RequestType;
           otherButtonTitles:nil] show];
           */
      }];
-    
+
     if (progressHandler)
     {
         [operation setUploadProgressBlock:^(NSUInteger bytesRead, long long totalBytesRead, long long totalBytesExpectedToRead)
          {
              float progress = (float)totalBytesRead/(float)totalBytesExpectedToRead;
-             
+
              NSUInteger downloadPercentage = (float)progress * (float)100;
              if (downloadPercentage > 100) downloadPercentage = 100;
-             
+
              progressHandler(totalBytesExpectedToRead, totalBytesRead, progress, downloadPercentage);
-             
+
              //NSLog(@"%lld | %lld | %lld", totalBytesExpectedToRead, totalBytesRead, (long long)bytesRead);
              //NSLog(@"progress: %.2f %%", downloadPercentage*100);
          }];
@@ -724,14 +724,14 @@ RequestType;
                 completionHandler:(void(^)(NSError *error, id responseObject))completionHandler
 {
     NSString *urlString = ([url isKindOfClass:[NSString class]] ? (NSString *)url : [NSString stringWithFormat:@"%@", url]);
-    
+
     AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
     manager.responseSerializer = [AFHTTPResponseSerializer serializer];
     manager.requestSerializer.HTTPShouldHandleCookies = _cookiesShouldHandle;
     manager.requestSerializer.timeoutInterval = _timeoutInterval;
-    
+
     [_managersArray addObject:manager];
-    
+
     AFHTTPRequestOperation *operation = [manager POST:urlString
                                            parameters:parameters
                             constructingBodyWithBlock:^(id<AFMultipartFormData> formData)
@@ -741,7 +741,7 @@ RequestType;
                                               success:^(AFHTTPRequestOperation *operation, NSData *responseData)
                                          {
                                              [self parseResponseData:responseData responseType:responseType operation:operation completionHandler:completionHandler];
-                                             
+
                                              [manager.operationQueue cancelAllOperations];
                                              [_managersArray removeObject:manager];
                                          }
@@ -759,28 +759,28 @@ RequestType;
                                                      [savedRequest setObject:[NSNumber numberWithInt:responseType] forKey:@"responseType"];
                                                      if (progressHandler) [savedRequest setObject:progressHandler forKey:@"progressHandler"];
                                                      if (completionHandler) [savedRequest setObject:completionHandler forKey:@"completionHandler"];
-                                                     
+
                                                      BOOL isExist = NO;
-                                                     
+
                                                      for (NSDictionary *dictionary in _savedRequestsArray)
                                                          if ([dictionary isEqualToDictionary:savedRequest])
                                                              isExist = YES;
-                                                     
+
                                                      if (!isExist) [_savedRequestsArray addObject:savedRequest];
                                                  }
                                                  else if (completionHandler) completionHandler(error, nil);
-                                                 
+
                                                  if (_connectionLostHandler) _connectionLostHandler();
                                              }
                                              else
                                              {
                                                  if (completionHandler) completionHandler(error, nil);
-                                                 
+
                                                  [manager.operationQueue cancelAllOperations];
                                                  [_managersArray removeObject:manager];
                                              }
                                          }];
-    
+
     [operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^(void)
      {
          /*
@@ -791,18 +791,18 @@ RequestType;
           otherButtonTitles:nil] show];
           */
      }];
-    
+
     if (progressHandler)
     {
         [operation setUploadProgressBlock:^(NSUInteger bytesRead, long long totalBytesRead, long long totalBytesExpectedToRead)
          {
              float progress = (float)totalBytesRead/(float)totalBytesExpectedToRead;
-             
+
              NSUInteger downloadPercentage = (float)progress * (float)100;
              if (downloadPercentage > 100) downloadPercentage = 100;
-             
+
              progressHandler(totalBytesExpectedToRead, totalBytesRead, progress, downloadPercentage);
-             
+
              //NSLog(@"%lld | %lld | %lld", totalBytesExpectedToRead, totalBytesRead, (long long)bytesRead);
              //NSLog(@"progress: %.2f %%", downloadPercentage*100);
          }];
@@ -845,45 +845,45 @@ RequestType;
           completionHandler:(void(^)(NSError *error, BOOL isModified))completionHandler
 {
     NSString *urlString = ([url isKindOfClass:[NSString class]] ? (NSString *)url : [NSString stringWithFormat:@"%@", url]);
-    
+
     AFHTTPRequestOperationManager *manager = [AFHTTPRequestOperationManager manager];
     manager.responseSerializer = [AFHTTPResponseSerializer serializer];
     manager.requestSerializer.HTTPShouldHandleCookies = _cookiesShouldHandle;
     manager.requestSerializer.timeoutInterval = _timeoutInterval;
-    
+
     if (useModifiedControl)
     {
         manager.requestSerializer.cachePolicy = NSURLRequestReloadIgnoringLocalAndRemoteCacheData;
-        
+
         NSString *key = [LGHelper sha1HashFromString:[NSString stringWithFormat:@"%@", url]];
         NSString *lastModified = [[NSUserDefaults standardUserDefaults] stringForKey:key];
         if (lastModified.length)
             [manager.requestSerializer setValue:lastModified forHTTPHeaderField:@"If-Modified-Since"];
     }
-    
+
     [_managersArray addObject:manager];
-    
+
     __block BOOL responseFromCache = YES;
-    
+
     AFHTTPRequestOperation *operation = [manager GET:urlString
                                           parameters:nil
                                              success:^(AFHTTPRequestOperation *operation, NSData *responseData)
                                          {
                                              //NSLog(@"statusCode: %i", (int)[operation.response statusCode]);
                                              //NSLog(@"allHeaderFields: %@", [operation.response allHeaderFields]);
-                                             
+
                                              // -----
-                                             
+
                                              if (responseData.length)
                                                  [responseData writeToURL:localUrl atomically:YES];
-                                             
+
                                              if (completionHandler) completionHandler(nil, YES);
-                                             
+
                                              [manager.operationQueue cancelAllOperations];
                                              [_managersArray removeObject:manager];
-                                             
+
                                              // -----
-                                             
+
                                              if (useModifiedControl)
                                              {
                                                  NSDictionary *headers = [operation.response allHeaderFields];
@@ -896,9 +896,9 @@ RequestType;
                                              failure:^(AFHTTPRequestOperation *operation, NSError *error)
                                          {
                                              if (error.code == kErrorCodeNotModified) error = nil;
-                                             
+
                                              // -----
-                                             
+
                                              if (!self.isConnectionAvailable)
                                              {
                                                  if (_savedRequestsArray)
@@ -910,35 +910,35 @@ RequestType;
                                                      [savedRequest setObject:[NSNumber numberWithBool:useModifiedControl] forKey:@"useModifiedControl"];
                                                      if (progressHandler) [savedRequest setObject:progressHandler forKey:@"progressHandler"];
                                                      if (completionHandler) [savedRequest setObject:completionHandler forKey:@"completionHandler"];
-                                                     
+
                                                      BOOL isExist = NO;
-                                                     
+
                                                      for (NSDictionary *dictionary in _savedRequestsArray)
                                                          if ([dictionary isEqualToDictionary:savedRequest])
                                                              isExist = YES;
-                                                     
+
                                                      if (!isExist) [_savedRequestsArray addObject:savedRequest];
                                                  }
                                                  else if (completionHandler) completionHandler(error, NO);
-                                                 
+
                                                  if (_connectionLostHandler) _connectionLostHandler();
                                              }
                                              else
                                              {
                                                  if (completionHandler) completionHandler(error, NO);
-                                                 
+
                                                  [manager.operationQueue cancelAllOperations];
                                                  [_managersArray removeObject:manager];
                                              }
                                          }];
-    
+
     [operation setCacheResponseBlock:^NSCachedURLResponse *(NSURLConnection *connection, NSCachedURLResponse *cachedResponse)
      {
          responseFromCache = NO;
-         
+
          return cachedResponse;
      }];
-    
+
     [operation setShouldExecuteAsBackgroundTaskWithExpirationHandler:^(void)
      {
          /*
@@ -949,18 +949,18 @@ RequestType;
           otherButtonTitles:nil] show];
           */
      }];
-    
+
     if (progressHandler)
     {
         [operation setDownloadProgressBlock:^(NSUInteger bytesRead, long long totalBytesRead, long long totalBytesExpectedToRead)
          {
              float progress = (float)totalBytesRead/(float)totalBytesExpectedToRead;
-             
+
              NSUInteger downloadPercentage = (float)progress * (float)100;
              if (downloadPercentage > 100) downloadPercentage = 100;
-             
+
              progressHandler(totalBytesExpectedToRead, totalBytesRead, progress, downloadPercentage);
-             
+
              //NSLog(@"%lld | %lld | %lld", totalBytesExpectedToRead, totalBytesRead, (long long)bytesRead);
              //NSLog(@"progress: %.2f %%", downloadPercentage*100);
          }];
@@ -970,9 +970,9 @@ RequestType;
 #pragma mark -
 
 - (void)parseResponseData:(NSData *)responseData
-               responseType:(LGConnectionResponseType)responseType
-                  operation:(AFHTTPRequestOperation *)operation
-          completionHandler:(void(^)(NSError *error, id responseObject))completionHandler
+             responseType:(LGConnectionResponseType)responseType
+                operation:(AFHTTPRequestOperation *)operation
+        completionHandler:(void(^)(NSError *error, id responseObject))completionHandler
 {
     if (!responseData || !responseData.length)
     {
@@ -982,14 +982,14 @@ RequestType;
     {
         id parsedResponseObject;
         NSError *error;
-        
+
         if (responseType == LGConnectionResponseTypeDATA)
             parsedResponseObject = responseData;
         else if (responseType == LGConnectionResponseTypeXML)
             parsedResponseObject = [XMLReader dictionaryForXMLData:responseData error:&error];
         else if (responseType == LGConnectionResponseTypeJSON)
             parsedResponseObject = [NSJSONSerialization JSONObjectWithData:responseData options:NSJSONReadingMutableContainers error:&error];
-        
+
         if (completionHandler)
         {
             if (error)
@@ -1009,10 +1009,10 @@ RequestType;
         for (int i=0; i<_managersArray.count; i++)
         {
             AFHTTPRequestOperationManager *_manager = _managersArray[i];
-            
+
             [_manager.operationQueue cancelAllOperations];
         }
-        
+
         [_managersArray removeAllObjects];
     }
 }
@@ -1028,55 +1028,55 @@ RequestType;
                   completionHandler:(void(^)(NSError *error, id responseObject))completionHandler
 {
     // configure the request
-    
+
     NSMutableURLRequest *request = [[NSMutableURLRequest alloc] initWithURL:url];
     [request setHTTPMethod:@"POST"];
-    
+
     // Generate boundary
-    
+
     NSString *boundary = [NSString stringWithFormat:@"Boundary-%@", [[NSUUID UUID] UUIDString]];
-    
+
     // set content type
-    
+
     NSString *contentType = [NSString stringWithFormat:@"multipart/form-data; boundary=%@", boundary];
     [request setValue:contentType forHTTPHeaderField: @"Content-Type"];
-    
+
     // create body
-    
+
     NSMutableData *httpBody = [NSMutableData data];
-    
+
     // add params (all params are strings)
-    
+
     [parameters enumerateKeysAndObjectsUsingBlock:^(NSString *parameterKey, NSString *parameterValue, BOOL *stop)
      {
          [httpBody appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
          [httpBody appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@\"\r\n\r\n", parameterKey] dataUsingEncoding:NSUTF8StringEncoding]];
          [httpBody appendData:[[NSString stringWithFormat:@"%@\r\n", parameterValue] dataUsingEncoding:NSUTF8StringEncoding]];
      }];
-    
+
     // add image data
-    
+
     for (NSString *path in paths)
     {
         NSString *filename  = [path lastPathComponent];
         NSData   *data      = [NSData dataWithContentsOfFile:path];
         NSString *mimetype  = [LGHelper mimeTypeForPath:path];
-        
+
         [httpBody appendData:[[NSString stringWithFormat:@"--%@\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
         [httpBody appendData:[[NSString stringWithFormat:@"Content-Disposition: form-data; name=\"%@[0]\"; filename=\"%@\"\r\n", name, filename] dataUsingEncoding:NSUTF8StringEncoding]];
         [httpBody appendData:[[NSString stringWithFormat:@"Content-Type: %@\r\n\r\n", mimetype] dataUsingEncoding:NSUTF8StringEncoding]];
         [httpBody appendData:data];
         [httpBody appendData:[@"\r\n" dataUsingEncoding:NSUTF8StringEncoding]];
     }
-    
+
     // -----
-    
+
     [httpBody appendData:[[NSString stringWithFormat:@"--%@--\r\n", boundary] dataUsingEncoding:NSUTF8StringEncoding]];
-    
+
     // -----
-    
+
     request.HTTPBody = httpBody;
-    
+
     [NSURLConnection sendAsynchronousRequest:request
                                        queue:[NSOperationQueue new]
                            completionHandler:^(NSURLResponse *response, NSData *data, NSError *connectionError)
