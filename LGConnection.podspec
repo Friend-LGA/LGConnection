@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
     s.name = 'LGConnection'
-    s.version = '1.0.3'
+    s.version = '1.0.4'
     s.platform = :ios, '6.0'
     s.license = 'MIT'
     s.homepage = 'https://github.com/Friend-LGA/LGConnection'
@@ -13,9 +13,9 @@ Pod::Spec.new do |s|
 
     s.source_files = 'LGConnection/*.{h,m}'
 
-    s.dependency 'AFNetworking', '~> 2.5'
+    s.dependency 'AFNetworking', '~> 2.5.0'
     s.dependency 'Reachability', '~> 3.2'
     s.dependency 'XMLReader-Arc', '~> 1.1'
-    s.dependency 'LGHelper', '~> 1.1'
+    s.dependency 'LGHelper', '~> 1.1.0'
 
 end
